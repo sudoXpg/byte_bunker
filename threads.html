@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>A Journey Through Threads, Race Conditions, and Trigonometric Surprises</title>
+</head>
+<body>
+
+<h1>A Journey Through Threads, Race Conditions, and Trigonometric Surprises</h1>
+
+<p>
+I recently took on what I thought would be a straightforward exercise: writing a multithreaded program in C using pthread. The goal was simple — divide a task into multiple threads, let them compute something in parallel, and collect the results. As always with concurrency, what looked simple on the surface quickly led me down a deep rabbit hole involving race conditions, CPU core limitations, thread safety, and memory bugs. Here’s the story.
+</p>
+
+<h2>The Thread-Cores Mismatch</h2>
+<p>
+It started with trying to understand how threads work on a system. Threads are scheduled onto CPU cores by the OS, and if you create more threads than the number of logical cores, they compete for time, leading to context switching overhead.
+</p>
+
+<pre>
+#define NUM_THREADS 10000
+
+for (int i = 0; i < NUM_THREADS; i++) {
+    pthread_create(&threads[i], NULL, prime_check, (void *)&i);
+}
+</pre>
+
+<p>
+This was a mistake. Not only was this inefficient due to thread oversubscription, but I also ran into serious bugs.
+</p>
+
+<h2>The First Race Condition</h2>
+<p>
+The first issue was subtle but critical. I passed the address of the loop variable i into each thread. Since all threads received the same memory address, and the loop updated i rapidly, threads were often reading the same value.
+</p>
+
+<pre>
+// Buggy code — threads receive the same memory address
+pthread_create(&threads[i], NULL, prime_check, (void *)&i);
+</pre>
+
+<p>
+To fix this, I allocated memory for each argument separately:
+</p>
+
+<pre>
+int *arg = malloc(sizeof(int));
+*arg = i;
+pthread_create(&threads[i], NULL, prime_check, arg);
+</pre>
+
+<p>
+And inside the thread function, I made sure to free the memory:
+</p>
+
+<pre>
+void *prime_check(void *arg) {
+    int n = *((int *)arg);
+    free(arg);
+    // do stuff...
+}
+</pre>
+
+<h2>The Global Counter Problem</h2>
+<p>
+To collect results, I used a global int prime_count variable and incremented it in each thread after finding primes. But the results were again inconsistent. This was a textbook race condition. Multiple threads were modifying the variable without synchronization.
+</p>
+
+<p>The solution was a pthread_mutex_t:</p>
+
+<pre>
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+void *prime_check(void *arg) {
+    // after checking for primes...
+    pthread_mutex_lock(&lock);
+    prime_count += local_count;
+    pthread_mutex_unlock(&lock);
+}
+</pre>
+
+<h2>Exploring Trigonometry</h2>
+<p>
+I then decided to switch from primes to computing trigonometric functions like sin(x) and cos(x) using Taylor series. I wrote a thread function that takes an angle x = i * 0.1 and approximates sine and cosine values:
+</p>
+
+<pre>
+float sinx = x - x3 / 6.0f + x5 / 120.0f - x7 / 5040.0f;
+float cosx = 1.0f - x2 / 2.0f + x4 / 24.0f - x6 / 720.0f;
+</pre>
+
+<p>Here’s the full thread function:</p>
+
+<pre>
+void *sin_cos_calc(void *rad) {
+    float x = 0.1f * *((int *)rad);
+    free(rad);
+
+    float x2 = x * x;
+    float x3 = x2 * x;
+    float x4 = x2 * x2;
+    float x5 = x3 * x2;
+    float x6 = x4 * x2;
+    float x7 = x5 * x2;
+
+    float sinx = x - x3 / 6.0f + x5 / 120.0f - x7 / 5040.0f;
+    float cosx = 1.0f - x2 / 2.0f + x4 / 24.0f - x6 / 720.0f;
+
+    printf("Angle: %f, sin(x) ≈ %.6f, cos(x) ≈ %.6f\n", x, sinx, cosx);
+    return NULL;
+}
+</pre>
+
+<h2>Valgrind Saves the Day</h2>
+<p>
+I ran the code through Valgrind to check for memory leaks and errors:
+</p>
+
+<pre>
+valgrind --leak-check=full ./a.out
+</pre>
+
+<p>
+Valgrind revealed some missing free calls and uninitialized values in older versions of the code. Fixing these ensured memory safety.
+</p>
+
+<h2>The Optimization Catch</h2>
+<p>
+I also played around with compiler flags like -O3 to boost performance. This revealed another lesson: aggressive optimization can sometimes cause undefined behavior to manifest if your code isn't sound.
+</p>
+
+<p>
+In one case, I had a function that didn't return a value on all paths, and -O3 optimized out the entire body based on assumptions. Explicitly returning from all paths and avoiding unused code fixed this.
+</p>
+
+<h2>Final Thoughts</h2>
+<p>
+Eventually, the program became clean, fast, and stable. Each thread operated independently with its own memory, and synchronization was applied only where necessary. I experimented with both computational workloads — primes and trigonometric calculations — and learned how each stressed different parts of the threading model.
+</p>
+
+<p>
+This journey started with a simple idea and ended up teaching me a lot about how threads work, how race conditions arise, how mutexes save you, and how memory management and compiler optimizations interact in the world of C.
+</p>
+
+<p>
+Concurrency may look easy when you're writing the first few lines, but it quickly exposes the complexity and power of the underlying system. And honestly, that's what makes it so rewarding.
+</p>
+
+</body>
+</html>

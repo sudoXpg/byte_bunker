@@ -14,10 +14,10 @@
       font-family: 'Roboto Mono', monospace;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       text-align: center;
+      padding: 2em 1em;
     }
 
     h1 {
@@ -47,6 +47,8 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      display: inline-block;
+      margin: 0.5em;
     }
 
     a:hover {
@@ -54,9 +56,31 @@
       color: #0f111a;
     }
 
+    section {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 2em;
+    }
+
+    h2 {
+      color: #00ffa8;
+      font-size: 1.75rem;
+      margin-bottom: 1em;
+      border-bottom: 1px solid #00ffa8;
+      padding-bottom: 0.5em;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 1em 0;
+    }
+
     footer {
-      position: absolute;
-      bottom: 1em;
+      margin-top: auto;
       font-size: 0.9rem;
       color: #004d33;
       font-style: italic;
@@ -67,6 +91,13 @@
   <h1>byte_bunker</h1>
   <p>Minimal blog &amp; tech thoughts — dedicated to embedded systems, firmware, and digital tinkering.</p>
   <a href="https://github.com/sudoXpg" target="_blank" rel="noopener">View My GitHub</a>
+
+  <section>
+    <h2>Blogs</h2>
+    <ul>
+      <li><a href="threads.html">17-05-25 : A Journey Through Threads, Race Conditions, and Trigonometric Surprises</a></li>
+    </ul>
+  </section>
 
   <footer>© 2025 sudoXpg</footer>
 </body>
