@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sony's Emotionally Charged Chip - Inside the PS2 Architecture</title>
+</head>
+<body>
+  <h1>Sony's Emotionally Charged Chip - Inside the PS2 Architecture</h1>
+
+  <p>Back in 2000, Sony released the PlayStation 2, a console that didn't just focus on better graphics or faster performance. It was designed to give players and developers an emotional experience. The centerpiece of this approach was something Sony called the Emotion Engine, a chip that aimed to simulate lifelike environments and expressions. Sony's goal was clear: give developers the raw horsepower to craft game worlds that could feel alive.</p>
+
+  <p>What made the PS2 so unique was its distributed architecture. Instead of relying on a single powerhouse chip, it used several specialized processors working together in parallel, each handling a specific job. This gave the PS2 a kind of balance and efficiency that was far ahead of its time.</p>
+
+  <h2>The Emotion Engine: The Heart of the PS2</h2>
+
+  <p>At the core of the PlayStation 2 sat the Emotion Engine. Manufactured using a 0.25 micrometer CMOS process, the chip was quite large at 240 square millimeters and packed 10.5 million transistors. Running at 300 megahertz, it delivered around 6.2 gigaflops of computing power. That was more than enough muscle for handling physics, animation, and real-time game logic at a high level.</p>
+
+  <h2>How the Core Was Built</h2>
+
+  <p>The Emotion Engine was based on a RISC design, specifically the MIPS III architecture with a few features borrowed from MIPS IV. It had a dual-issue core, which means it could execute two instructions at the same time in a single stage of the processor cycle. This isn't pipelining, but true parallel execution within a single step.</p>
+
+  <p>It also featured a 128-bit SIMD unit. SIMD stands for Single Instruction Multiple Data, which lets the CPU apply the same operation across multiple data points. With 128-bit registers, it could process sixteen 8-bit integers in one go. This was incredibly powerful for game tasks like particle effects, physics, and audio.</p>
+
+  <p>Sony introduced 107 new SIMD instructions specifically for the console. These included the usual suspects like addition, subtraction, multiplication, division, and logical operations. There were also utility instructions such as shift and leading zero count, tailored for optimized game workloads.</p>
+
+  <h2>Memory and Caching for Speed</h2>
+
+  <p>To keep things fast, the Emotion Engine had a 16 kilobyte instruction cache, which stored recently used code to avoid repeated fetching. There was also an 8 kilobyte dual-channel data cache for quickly accessing game data. Additionally, it featured a 16 kilobyte scratchpad RAM, which developers could control directly via software. This allowed more efficient on-chip data handling, reducing the need to constantly fetch from external memory.</p>
+
+  <p>The memory system included a 128-bit wide data bus connected to dual-channel Direct Rambus DRAM. That allowed massive data transfers in a single cycle, giving developers room to push more visual and physical complexity into their games.</p>
+
+  <h2>The Vector Units: VPU0 and VPU1</h2>
+
+  <p>The Emotion Engine was supported by two powerful vector units, each designed to handle floating-point operations that are essential for 3D graphics and geometry processing.</p>
+
+  <h3>VPU0: Modeling and Transformations</h3>
+  <p>VPU0 was tightly integrated with the CPU as a MIPS coprocessor. It focused on high-level modeling and geometry transformations. Developers could write custom microcode for it, stored in a small 4 kilobyte SRAM block called micromem0.</p>
+
+  <h3>VPU1: Lighting and Low-Level Geometry</h3>
+  <p>VPU1 worked independently of the CPU. This meant it could process complex lighting and detailed geometry calculations in parallel with the rest of the system. It had its own 16 kilobyte microcode SRAM (micromem1), which let developers offload specific graphical tasks from the main processor.</p>
+
+  <h3>Shared Specs for the VPUs</h3>
+  <p>Both vector units featured thirty-two 128-bit floating point registers and sixteen 16-bit integer registers. They also included four floating-point multiply-accumulate (FMAC) units, which had a latency of four cycles but were fully pipelined. There was also a floating divide unit (FDIV) with a throughput of one result every seven cycles.</p>
+
+  <p>The virtual memory used by the VPUs was controlled by DMA. VPU1 connected directly to the Graphics Synthesizer through a dedicated interface known as the Graphics Interface.</p>
+
+  <h2>Graphics Synthesizer: Rendering at Blazing Speeds</h2>
+
+  <p>The Graphics Synthesizer, or GS, was responsible for turning all the math and data into visual output. It was a massive chip in its own right at 279 square millimeters. It could draw around 2.4 billion pixels every second, which made it incredibly fast for the time.</p>
+
+  <p>The GS received prioritized data from the system through the Graphics Interface. This interface managed the streams of data from the Emotion Engine, VPU1, and the Image Processing Unit, making sure that everything rendered in the correct order and without conflict.</p>
+
+  <h2>Image Processing Unit: Handling Video and Textures</h2>
+
+  <p>The IPU had a few key jobs. It decoded MPEG-2 video streams, which were often used in cutscenes and pre-rendered sequences. It also handled decompression for 3D texture maps and regular textures.</p>
+
+  <p>Importantly, the IPU operated in parallel with the main CPU. Data was fed into it via a DMA-controlled FIFO buffer. Once processed, the output was sent straight to the Graphics Interface, reducing CPU load and improving performance for video-heavy scenes.</p>
+
+  <h2>I/O Processor: Old Hardware with New Purpose</h2>
+
+  <p>Sony reused the PlayStation 1's CPU as the I/O processor for the PS2. This 32-bit MIPS core handled all input and output operations. That included the DVD-ROM drive, digital audio formats like DTS and AC3, the USB interface, modem, controller ports, and memory card access.</p>
+
+  <p>For backwards compatibility, the IOP also served as the primary CPU when running original PlayStation titles. During PS2 gameplay, it focused entirely on I/O, offloading those tasks from the Emotion Engine. Thanks to optimizations, it delivered four times the DMA transfer performance of its PS1 version.</p>
+
+  <h2>Smarter 3D with NURBS</h2>
+
+  <p>Sony didn't stop at brute force. They wanted more efficient ways to render complex objects. One technique the PS2 used was NURBS, which stands for Non-Uniform Rational B-Splines. Instead of defining every tiny polygon or pixel, developers could use guiding control points and curves to shape smooth 3D surfaces. This made it easier to model things like faces or cars without wasting processing power or memory.</p>
+
+  <h2>Final Thoughts</h2>
+
+  <p>The PlayStation 2 was far more than just a faster PlayStation. Its architecture was a careful combination of specialized processors, custom memory systems, and smart data management strategies. The Emotion Engine delivered floating-point power when it mattered, the vector units crunched complex geometry, the IPU handled video and textures seamlessly, and the Graphics Synthesizer made everything come to life on screen.</p>
+
+  <p>Together, they created a machine that defined a generation and left a legacy of technical innovation that still fascinates engineers today.</p>
+</body>
+</html>
