@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Understanding ARM Bare-Metal Compilation</title>
+</head>
+<body>
+
+<h1>Understanding the ARM Bare-Metal Build Process</h1>
+
+<p>
+If you are starting with embedded systems on ARM Cortex-M microcontrollers, you will often hear about bare-metal programming. This means working directly with the hardware without an operating system managing tasks. This post explains how your C code transforms into something that runs on a microcontroller by covering the compilation, linking, and flashing steps in the context of ARM Cortex-M devices.
+</p>
+
+<h2>Why Cross Compilation Is Necessary</h2>
+
+<p>
+Most development happens on x86-based computers like laptops or desktops, but microcontrollers such as STM32 use ARM architecture. To build code for these devices on your PC, you need cross compilation. This allows you to compile programs for a different CPU architecture than your development machine. The most widely used toolchain for ARM Cortex-M development is <code>arm-none-eabi-gcc</code>, part of the GNU Arm Embedded Toolchain.
+</p>
+
+<h2>The Build Process Explained</h2>
+
+<p>
+Here is an overview of how a C program gets built for an ARM microcontroller:
+</p>
+
+<ol>
+  <li>The preprocessor runs, expanding all headers and macros in your source file like <code>main.c</code>, producing <code>main.i</code>.</li>
+  <li>The compiler takes the preprocessed file and converts it to assembly code, generating <code>main.s</code>.</li>
+  <li>The assembler converts the assembly code into machine code, producing an object file <code>main.o</code>.</li>
+  <li>The linker combines object files, startup code, and the memory layout described by a linker script to create an executable in ELF format, <code>main.elf</code>.</li>
+  <li>You convert the ELF file to a format suitable for flashing, such as Intel HEX or binary.</li>
+</ol>
+
+<h2>Example Compilation Command</h2>
+
+<pre><code>arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb -S file.c -o file.o</code></pre>
+
+<p>
+This command instructs the compiler to generate assembly code optimized for a Cortex-M4 processor using the Thumb instruction set.
+</p>
+
+<h2>Using a Makefile to Automate the Build</h2>
+
+<p>
+To simplify the build process, you can use a Makefile that compiles multiple source files and links them into one executable. Here is a basic example:
+</p>
+
+<pre><code>CC = arm-none-eabi-gcc
+CFLAGS = -c -O0 -mcpu=cortex-m4 -mthumb -std=gnu11 -Wall
+LDFLAGS = -nostdlib -T stm32_ls.ld -Wl,-Map=final.map
+
+all: main.o led.o stm32_startup.o final.elf
+
+main.o: main.c
+	$(CC) $(CFLAGS) main.c -o main.o
+
+led.o: led.c
+	$(CC) $(CFLAGS) led.c -o led.o
+
+stm32_startup.o: stm32_startup.c
+	$(CC) $(CFLAGS) stm32_startup.c -o stm32_startup.o
+
+final.elf: main.o led.o stm32_startup.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+clean:
+	rm -rf *.o *.elf
+</code></pre>
+
+<h2>Inspecting Object Files</h2>
+
+<p>
+After compiling, you can use the <code>objdump</code> tool to examine object files and their sections:
+</p>
+
+<pre><code>arm-none-eabi-objdump -h main.o</code></pre>
+
+<p>
+Common sections include:
+</p>
+
+<ul>
+  <li><strong>.text</strong> which contains your compiled program instructions</li>
+  <li><strong>.data</strong> for initialized global variables stored in RAM</li>
+  <li><strong>.bss</strong> for uninitialized global variables, zero-initialized at startup</li>
+  <li><strong>.rodata</strong> for read-only data such as constants</li>
+</ul>
+
+<h2>What Happens at Microcontroller Startup</h2>
+
+<p>
+On reset, the microcontroller does not directly jump to your <code>main()</code> function. Instead, it jumps to an address defined in the vector table, where the startup code resides. The startup code sets up the environment by initializing memory sections and then calls your <code>main()</code> function.
+</p>
+
+<p>
+A simplified version of a reset handler in C looks like this:
+</p>
+
+<pre><code>void Reset_Handler(void)
+{
+    uint32_t size = (uint32_t)&_edata - (uint32_t)&_sdata;
+    uint8_t *dest = (uint8_t*)&_sdata;
+    uint8_t *src = (uint8_t*)&_la_data;
+
+    for(uint32_t i = 0; i < size; i++) {
+        *dest++ = *src++;
+    }
+
+    size = (uint32_t)&_ebss - (uint32_t)&_sbss;
+    dest = (uint8_t*)&_sbss;
+    for(uint32_t i = 0; i < size; i++) {
+        *dest++ = 0;
+    }
+
+    main();
+}
+</code></pre>
+
+<p>
+This code copies initialized variables from flash to RAM and clears uninitialized variables before running the main application.
+</p>
+
+<h2>Understanding the Memory Map</h2>
+
+<p>
+A linker script controls where each piece of the program resides in memory. Here is a common simplified layout:
+</p>
+
+<h3>Flash Memory</h3>
+
+<p>
+Starts at address 0x08000000 and holds the interrupt vector table, code (.text), constants (.rodata), and the load image of initialized variables.
+</p>
+
+<h3>SRAM</h3>
+
+<p>
+Starts at 0x20000000 and contains initialized global variables (.data) during runtime, uninitialized globals (.bss), the heap, and the stack.
+</p>
+
+<h2>Example Linker Script</h2>
+
+<p>
+This script defines memory regions and sections:
+</p>
+
+<pre><code>ENTRY(Reset_Handler)
+
+MEMORY
+{
+  FLASH(rx) : ORIGIN = 0x08000000, LENGTH = 1024K
+  SRAM(rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+}
+
+SECTIONS
+{
+  .text :
+  {
+    *(.isr_vector)
+    *(.text*)
+    *(.init)
+    *(.fini)
+    *(.rodata*)
+    . = ALIGN(4);
+    _etext = .;
+  } > FLASH
+
+  _la_data = LOADADDR(.data);
+
+  .data :
+  {
+    _sdata = .;
+    *(.data*)
+    . = ALIGN(4);
+    _edata = .;
+  } > SRAM AT > FLASH
+
+  .bss :
+  {
+    _sbss = .;
+    *(COMMON)
+    *(.bss*)
+    . = ALIGN(4);
+    _ebss = .;
+  } > SRAM
+}
+</code></pre>
+
+<h2>Flashing the Program</h2>
+
+<p>
+Once the program is compiled and linked, it must be uploaded to the microcontroller. A typical workflow includes:
+</p>
+
+<ol>
+  <li>Starting OpenOCD with a configuration suitable for your board.</li>
+  <li>Launching GDB and connecting to OpenOCD using <code>target remote localhost:3333</code>.</li>
+  <li>Resetting and halting the microcontroller with <code>monitor reset halt</code>, then loading the program using <code>load</code>.</li>
+</ol>
+
+<p>
+After this process, the microcontroller begins executing your code. This is bare-metal development in its purest form, where you control all hardware and software aspects.
+</p>
+
+<hr />
+
+<p>
+For the complete source code and examples related to this project, visit my GitHub repository at  
+<a href="https://github.com/sudoXpg/stm32f4-startup" target="_blank" rel="noopener noreferrer">https://github.com/sudoXpg/stm32f4-startup</a>.
+</p>
+
+<p>
+You can also explore more embedded systems content and projects on my blog homepage at  
+<a href="https://sudoxpg.github.io/byte_bunker/" target="_blank" rel="noopener noreferrer">https://sudoxpg.github.io/byte_bunker/</a>.
+</p>
+
+</body>
+</html>
