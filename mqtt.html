@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Understanding MQTT Protocol</title>
+</head>
+<body>
+
+  <p>
+    <a href="https://sudoxpg.github.io/byte_bunker/" target="_blank" rel="noopener noreferrer">← Back to Homepage</a>
+  </p>
+
+  <h1>Understanding MQTT Protocol</h1>
+
+  <p>MQTT is a lightweight messaging protocol designed for M2M (machine-to-machine) communication and IoT applications. It's highly bandwidth-efficient, easy to integrate, and built on top of TCP for reliable communication over unreliable channels. As a binary protocol, it's meant for machines and allows messages as small as 2 bytes, making it ideal for constrained devices.</p>
+
+  <p>It supports bi-directional, data-agnostic, push-style communication — where messages are pushed from publishers to subscribers via a broker, without the clients needing to poll for updates. TLS can be enabled for security, and it scales well due to its <strong>publish/subscribe (pub/sub)</strong> model.</p>
+
+  <h2>Publish/Subscribe Model</h2>
+  <p>In the pub/sub model, clients publish data to a central broker under specific topics. Other clients subscribe to these topics to receive updates. This architecture offers:</p>
+  <ul>
+    <li><strong>Space decoupling</strong> - no geographical limitations</li>
+    <li><strong>Time decoupling</strong> - works across timezones</li>
+    <li><strong>Synchronization decoupling</strong> - asynchronous communication</li>
+  </ul>
+  <p>The broker acts as the message hub. It manages all subscriptions and message routing, making scalability a strong point. However, this also means the broker is a single point of failure (SPOF). Clients typically use MQTT libraries or SDKs to communicate with a broker service.</p>
+
+  <h2>Packet Types</h2>
+  <ul>
+    <li><strong>CONNECT</strong> - Sent by the client with its metadata. Includes a clean session flag:
+      <ul>
+        <li>Clean: broker doesn't retain session state after disconnect</li>
+        <li>Persistent: broker saves session info for reconnecting clients</li>
+      </ul>
+    </li>
+    <li><strong>CONNACK</strong> - Broker’s response to a CONNECT packet, indicates if the client is allowed to connect.</li>
+    <li><strong>PUBLISH</strong> - Contains packet ID, topic name, QoS level, retain flag, and the message payload.
+      <ul>
+        <li><strong>Retain flag:</strong> if set, the broker stores the message and delivers it immediately to new subscribers of the topic.</li>
+      </ul>
+    </li>
+    <li><strong>SUBSCRIBE</strong> - Client requests subscription to topics with desired QoS levels.</li>
+    <li><strong>SUBACK</strong> - Acknowledges the subscription request.</li>
+    <li><strong>UNSUBSCRIBE</strong> - Used when a client no longer wants messages from certain topics.</li>
+  </ul>
+
+  <h2>Topics</h2>
+  <p>Topics are UTF-8 strings used by the broker to route messages. They can have multiple hierarchical levels, separated by slashes (e.g., <code>sensor/temp</code>). Wildcards are supported:</p>
+  <ul>
+    <li><code>#</code> - Matches all sub-topics (e.g., <code>sensors/#</code> matches all topics under <code>sensors</code>)</li>
+    <li><code>+</code> - Matches exactly one level (e.g., <code>sensors/+/temp</code> matches <code>sensors/room1/temp</code>)</li>
+  </ul>
+
+  <h2>QoS Levels</h2>
+  <p>MQTT offers three levels of Quality of Service to control delivery guarantees:</p>
+  <ul>
+    <li><strong>QoS 0</strong> - At most once delivery. Messages may be lost.</li>
+    <li><strong>QoS 1</strong> - At least once delivery. Acknowledged with <code>PUBACK</code>.</li>
+    <li><strong>QoS 2</strong> - Exactly once delivery. Requires a 4-step handshake:
+      <ol>
+        <li>Client → <code>PUBLISH</code></li>
+        <li>Broker → <code>PUBREC</code></li>
+        <li>Client → <code>PUBREL</code></li>
+        <li>Broker → <code>PUBCOMP</code></li>
+      </ol>
+    </li>
+  </ul>
+
+</body>
+</html>
