@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interconnects in VLSI</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      background-color: #fdfdfd;
+      color: #1a1a1a;
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1, h2 {
+      color: #222;
+    }
+    h2 {
+      margin-top: 2rem;
+    }
+    p {
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interconnects</h1>
+
+  <p>
+    Wires linking transistors are called interconnects. With advancements in technology, transistor sizes have decreased, and lower gate delays have been observed. However, the density of these small transistors has increased, leading to more complex interconnect paths, which dominate RC delay. The RC delay of a wire is now much greater than the delay of a gate. Wire pitch equals width plus spacing. Aspect ratio equals thickness divided by width. Earlier IC designs had 2–3 metal layers; now it's around 15–20 layers. The wire material evolved from aluminium to copper around the 130 nm node, and low-k dielectrics started being used instead of silicon dioxide.  
+</p>
+  <h2>Metal Layers</h2>
+
+  <p>
+As we go up the stack, the metal width increases, which leads to less resistance. Since resistance is inversely proportional to area, as area increases, resistance goes down. Top metal layers are thick, with large spacing, and are used for clock and power global signals. Intermediate layers are wide and long, used for inter-block communication. Bottom metal layers are thin, with very complex routing, and are used for intra-block or standard cell communication.
+</p>
+  <h2>Interconnect Resistance</h2>
+
+  <p>
+    The resistance of an interconnect can be modeled with a π-model (Pi-model) of 3-5 segments during simulation. A very important fact is that copper must be surrounded by a low-conductivity diffusion barrier that reduces the effective cross-sectional area, thereby increasing resistance. This barrier prevents copper atoms from diffusing into surrounding materials. Copper is thus enclosed by a diffusion barrier, which also raises the resistance of vias. This helps prevent copper from "bleeding" into nanoscale devices. The resistivity of polysilicon and diffusion wells is highly influenced by doping levels. Large resistances are implemented using wells in pure polysilicon. When current turns at sharp angles, like in vias, it introduces resistance, typically in the range of 2–20 ohms. This can cause hotspots in current density, so multiple contacts are used to mitigate this effect.
+</p>
+  <h2>Interconnect Capacitance</h2>
+
+  <p>
+    Capacitance in these interconnects mainly comes from two components: parallel plate capacitance and fringing capacitance. Fringing is particularly difficult to model accurately. In modern CMOS, calculating precise capacitance is complex, so upper and lower bounds are used instead. The upper bound is for propagation delay and power estimation; the lower bound is for contamination delay analysis. Horizontally laid wires typically use low-k dielectrics, while vertically stacked layers are surrounded by higher-k materials. The total capacitance consists of contributions from the top, bottom, twice the adjacent wires, and fringing capacitance.
+  </p>
+  <h2>Interconnect Inductance</h2>
+
+  <p>
+    Inductance is also difficult to quantify, so designers try to minimize its effect. However, it becomes important in high-speed clocks and power delivery networks. Since current flows in loops, the return path must be carefully considered. If current takes a path of lower resistance not intended by the design, it can interfere with other devices and cause inductive crosstalk. 
+</p>
+  <h2>Skin Effect</h2>
+
+<p>Skin effect refers to the phenomenon that at high frequencies, current flows near the conductor's surface due to induced eddy currents, reducing the effective cross-sectional area and thereby increasing resistance. Impedance is defined as Z = R + jωL. At high frequencies, the ωL term dominates, which causes current to concentrate at the surface. This can be approximated by assuming current flows in a shell of thickness Δ around the conductor.</p>
+
+  <h2>Temperature dependence</h2>
+
+  <p>
+    Resistance increases with temperature, while capacitance remains approximately constant. Since delay τ = RC, lowering the temperature reduces resistance and thereby reduces delay. Hence, delay is inversely proportional to temperature for cooled devices.  </p>
+
+  <h2>Interconnect Delay</h2>
+
+  <p>
+The Elmore delay of an interconnect can be modeled using a π-model. The delay for such a wire is RC/2, regardless of how many segments are used. Wire delay scales with the square of length. Since both R and C scale linearly with length, the resulting delay has a quadratic dependence on wire length. To reduce this delay, either thicker or wider wires can be used, or low-resistance materials should be chosen. Diffusion has very high capacitance and should never be used for interconnect. Longer wires will always incur greater delay than shorter ones.  </p>
+
+  <h2>Crosstalk</h2>
+
+  <p>
+Capacitive coupling between neighboring wires due to a switching event is referred to as crosstalk. Crosstalk is proportional to adjacent capacitance divided by total capacitance. For example, consider wires A and B. If A switches, and B is also switching, B’s transition may be delayed. If B is meant to remain constant, it may instead experience unwanted noise. The Miller Coupling Factor (MCF) is used to estimate the increase in effective capacitance due to this coupling, with a typical assumed value of 1.5. If A is switching and B is affected, A is called the aggressor and B is the victim. During switching, both Vgs and Vds change. This is similar to opening a tap: the initial surge resembles the high current flow in saturation, and as things stabilize, the transistor enters the linear region. So during switching, transistors operate in saturation, and settle into the linear region during steady-state.  </p>
+
+  <h2>Reducing Interconnect Delays</h2>
+
+  <p>
+    The most effective method of reducing delay is to increase spacing between wires. However, using thicker wires can also increase capacitance. Thus, IC delay still exhibits a quadratic relationship with wire length. Repeaters can be inserted to split a long wire into N segments, reducing overall delay. These repeaters (inverters) add gate delay, but in newer technologies, the wire delay is so dominant that the additional gate delay is acceptable. Repeaters are unidirectional, making them unsuitable for bidirectional buses. To accommodate bidirectional communication, duplicate repeater chains can be used for each direction, but this increases area and power. Transmission gates are a better alternative for bidirectional interconnects.
+  </p>
+
+  <h2>Crosstalk Control</h2>
+
+  <p>
+    There are several methods to reduce crosstalk. The most straightforward is to increase spacing between wires. In high-priority or critical paths, shielding wires with VDD or GND can also help, especially in clock signals to reduce jitter. Analog circuits must be shielded from digital blocks due to their sensitivity to noise. Another approach is temporal staggering of adjacent signals: for example, having one wire switch on the rising edge and its neighbor on the falling edge. This avoids simultaneous switching and reduces coupling.
+
+Regenerators can be used as alternatives to repeaters for handling directionality issues. They are placed parallel to the wire at intervals and provide better noise immunity, though they introduce around 20% more delay. The traditional idea of equal stage effort for delay optimization becomes ineffective in modern chips, where interconnect capacitance overwhelms gate capacitance, rendering gate-delay-centric models inadequate.
+  </p>
+
+    <p>
+    <a href="https://sudoxpg.github.io/byte_bunker/" target="_blank" rel="noopener noreferrer">← Back to Homepage</a>
+  </p>
+
+</body>
+</html>
