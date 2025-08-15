@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A Deep Dive into CUDA and GPU Architecture</title>
+  <meta name="description" content="A concise, technical exploration of CUDA, GPU architecture, the roofline model, memory hierarchy, and interconnects." />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      background-color: #fdfdfd;
+      color: #1a1a1a;
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1, h2 {
+      color: #222;
+    }
+    h2 {
+      margin-top: 2rem;
+    }
+    p {
+      margin-bottom: 1.25rem;
+    }
+  </style>
+<body>
+  <header class="wrap">
+    <h1>CUDA: Deep Dive</h1>
+  </header>
+
+  <main class="wrap" role="main">
+    <article>
+      <p>Modern GPUs are specialized processors optimized for parallel processing and high-throughput computation, a stark contrast to CPUs, which are primarily optimized for sequential execution and low-latency responses across diverse workloads. In high-performance computing and machine learning, GPUs excel in operations like matrix multiplication, which form the computational backbone of deep learning training and inference.</p>
+
+      <p>The roofline model provides a useful way to understand a GPU's performance limits. Here, the “roof” represents the peak theoretical performance,  determined by the processor's arithmetic units (e.g., CUDA cores for NVIDIA GPUs). The slope of the roofline before the flat ceiling is determined by operational intensity: the ratio of floating-point operations (FLOPs) to the number of bytes transferred from memory. Dense matrices have high operational intensity due to sustained computation on loaded data, while sparse matrices tend to have low operational intensity because zero-valued elements can be skipped, reducing computation relative to memory movement.</p>
+
+      <p>FLOPs measure the total number of floating-point operations performed, while throughput measures the sustained performance for a specific workload. Memory bandwidth, the rate at which data can be moved between memory and the compute units, often limits performance when operational intensity is low.</p>
+
+      <h2>CUDA Programming Model</h2>
+      <p>CUDA is NVIDIA's parallel computing platform and programming model, allowing developers to offload workloads to the GPU. The smallest executable unit in CUDA is the thread, a single instance of a kernel function operating on private data. A CUDA core, the ALU of the GPU, executes instructions from one thread per clock cycle. To achieve SIMT (Single Instruction, Multiple Threads) execution, CUDA cores rapidly context-switch between many threads, hiding memory latency and maximizing utilization.</p>
+
+      <p>Threads are organized hierarchically. A warp is a group of 32 threads executed in lockstep on a single SM. Warps are scheduled by the warp scheduler, which can issue instructions for up to one warp per cycle. Divergence, when threads within a warp follow different execution paths due to conditional branches, reduces utilization (e.g., an if-else branch with half the warp taking each path results in ~50% efficiency).</p>
+
+      <p>Warps are grouped into thread blocks (up to 1024 threads per block on modern NVIDIA architectures). A block is always assigned to a single streaming multiprocessor (SM) and never split across multiple SMs because SMs have local shared memory and L1 cache that are an order of magnitude faster than global memory (DRAM) or L2 cache. Blocks themselves are organized into a grid, which represents the total set of threads launched for a kernel.</p>
+
+      <h2>Streaming Multiprocessor Architecture</h2>
+      <p>An SM is the physical processing unit on a GPU, containing CUDA cores, register files, shared memory, warp schedulers, load/store units, and often tensor cores. Register files are multiported, supporting multiple reads and writes per cycle, enabling high parallelism.</p>
+
+      <p>The SM's L1 cache and shared memory are logically unified in recent NVIDIA architectures and dynamically partitioned on a per-kernel basis. For example, the A100 GPU offers 192 KB of L1/shared memory per SM, with a 40 MB L2 cache shared across the chip, and 40 GB of HBM2 DRAM. L2 cache latency is roughly 10x higher than L1, making on-chip memory critical for performance-sensitive workloads.</p>
+
+      <h2>Specialized Processing Units</h2>
+      <p>Tensor cores are specialized hardware within SMs designed to accelerate matrix operations, particularly fused multiply-add (FMA) computations. They are optimized for mixed-precision formats such as FP16, BF16, and INT8, enabling higher throughput and reduced memory consumption in deep learning workloads. Frameworks like PyTorch leverage libraries such as cuBLAS and cuDNN to automatically use tensor cores for eligible operations.</p>
+
+      <p>CUDA cores handle element-wise operations like activation functions, while tensor cores focus on high-throughput matrix math. The programmer's role is to define grid, block, and thread configurations; the CUDA runtime and GPU hardware then schedule execution across CUDA and tensor cores.</p>
+
+      <h2>Memory Hierarchy and Interconnects</h2>
+      <p>GPUs employ a tiered memory hierarchy:</p>
+      <ul>
+        <li><strong>L0 instruction cache</strong> holds recently used instructions for immediate reuse.</li>
+        <li><strong>L1/shared memory</strong> offers low-latency, high-bandwidth storage for intra-block data sharing.</li>
+        <li><strong>L2 cache</strong> serves as a chip-wide buffer between SMs and global memory.</li>
+        <li><strong>Global memory (DRAM)</strong> is large but has the highest latency.</li>
+      </ul>
+
+      <p>For multi-GPU setups, NVIDIA employs NVLink and NVSwitch to provide high-bandwidth, low-latency connections between GPUs, enabling a unified memory model across nodes. NVLink 3.0 surpasses PCIe 4.0 bandwidth, and NVSwitch scales NVLink fabrics for large GPU clusters. Host systems can connect GPUs to other high-bandwidth devices through PCIe switches (e.g., PLX chips) or directly to network adapters (HCA for InfiniBand, Ethernet).</p>
+
+      <p>AMD's equivalent interconnect is XGMI, while Intel uses UPI for CPU-to-CPU communication. Bandwidth scaling in all interconnects is proportional to the number of lanes, with “x16” or “x4” denoting the lane count. For example, PCIe 4.0 x16 provides ~32 GB/s theoretical bidirectional bandwidth, while PCIe 4.0 x4 offers ~8 GB/s.</p>
+
+
+  </main>
+
+  
+    <p>
+    <a href="https://sudoxpg.github.io/byte_bunker/" target="_blank" rel="noopener noreferrer">← Back to Homepage</a>
+  </p>
+</body>
+</html>
